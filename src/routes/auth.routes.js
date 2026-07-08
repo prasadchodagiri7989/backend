@@ -1,9 +1,9 @@
 'use strict';
 
-const { Router }    = require('express');
-const passport      = require('passport');
+const { Router } = require('express');
+const passport = require('passport');
 const authController = require('../controllers/auth.controller');
-const authenticate  = require('../middleware/authenticate');
+const authenticate = require('../middleware/authenticate');
 
 const router = Router();
 
@@ -15,7 +15,7 @@ const frontendUrl = () =>
 
 // Public — email/password
 router.post('/register', authController.register);
-router.post('/login',    authController.login);
+router.post('/login', authController.login);
 
 // Google OAuth — initiates the redirect to Google
 router.get('/google', (req, res, next) => {
@@ -32,19 +32,30 @@ router.get(
     if (!googleEnabled()) {
       return res.redirect(`${frontendUrl()}/login?error=oauth_failed`);
     }
-    passport.authenticate('google', {
-      failureRedirect: `${frontendUrl()}/login?error=oauth_failed`,
-      session: false,
-    })(req, res, next);
+    passport.authenticate(
+      'google',
+      { session: false },
+      (err, user, info) => {
+        console.log("ERR:", err);
+        console.log("USER:", user);
+        console.log("INFO:", info);
+
+        if (err) return next(err);
+        if (!user) return res.status(401).json(info);
+
+        req.user = user;
+        next();
+      }
+    )(req, res, next);
   },
   authController.googleCallback
 );
 
 // Protected (JWT required)
-router.get('/me',               authenticate, authController.me);
-router.get('/login-history',    authenticate, authController.loginHistory);
+router.get('/me', authenticate, authController.me);
+router.get('/login-history', authenticate, authController.loginHistory);
 router.get('/suspicious-check', authenticate, authController.suspiciousCheck);
-router.post('/device',          authenticate, authController.updateDeviceInfo);
-router.post('/capture-face',    authenticate, authController.captureFace);
+router.post('/device', authenticate, authController.updateDeviceInfo);
+router.post('/capture-face', authenticate, authController.captureFace);
 
 module.exports = router;
