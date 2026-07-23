@@ -2,15 +2,15 @@
 
 require('dotenv').config();
 
-const express   = require('express');
-const cors      = require('cors');
-const helmet    = require('helmet');
+const express = require('express');
+const cors = require('cors');
+const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
-const session   = require('express-session');
-const path      = require('path');
+const session = require('express-session');
+const path = require('path');
 
-const passport     = require('./config/passport');
-const routes       = require('./routes');
+const passport = require('./config/passport');
+const routes = require('./routes');
 const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
@@ -25,18 +25,40 @@ app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 
 // ─── CORS ────────────────────────────────────────────────────────────────────
 const allowedOrigins = (
-  process.env.ALLOWED_ORIGINS || 'http://localhost:5173'
+  process.env.ALLOWED_ORIGINS || 'http://localhost:3000,http://localhost:8000,http://localhost:5173,http://localhost:5174,https://admin.bimera.co/login,https://access.bimera.co'
 )
   .split(',')
   .map((o) => o.trim())
   .filter(Boolean);
 
+const isOriginAllowed = (origin) => {
+  if (!origin) return true;
+
+  if (allowedOrigins.includes(origin)) return true;
+
+  try {
+    const url = new URL(origin);
+    // Allow localhost/127.0.0.1
+    if (url.hostname === 'localhost' || url.hostname === '127.0.0.1') {
+      return true;
+    }
+    // Allow bimera.co domains and subdomains
+    if (url.hostname === 'bimera.co' || url.hostname.endsWith('.bimera.co')) {
+      return true;
+    }
+  } catch (e) {
+    // Ignore invalid url parse
+  }
+
+  return false;
+};
+
 const corsOptions = {
   origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
+    if (isOriginAllowed(origin)) {
       callback(null, true);
     } else {
-      callback(new Error(`CORS: origin ${origin} not allowed`));
+      callback(null, false);
     }
   },
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
