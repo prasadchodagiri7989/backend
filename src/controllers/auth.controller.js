@@ -46,7 +46,7 @@ const getClientIp = (req) => {
 
 const signToken = (user) =>
   jwt.sign(
-    { sub: user._id.toString(), email: user.email, name: user.name, role: user.role },
+    { sub: user._id.toString(), email: user.email, name: user.name, role: user.role, status: user.status || 'active' },
     process.env.JWT_SECRET,
     { expiresIn: process.env.JWT_EXPIRES_IN || '4h' }
   );
@@ -57,6 +57,7 @@ const safeUser = (user) => ({
   email:  user.email,
   avatar: user.avatar || null,
   role:   user.role,
+  status: user.status || 'active',
 });
 
 // ─── POST /api/auth/register ─────────────────────────────────────────────────

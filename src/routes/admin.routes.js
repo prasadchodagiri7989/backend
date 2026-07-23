@@ -15,6 +15,7 @@ router.get('/stats', admin.getStats);
 
 // ── Users ──────────────────────────────────────────────────────────────────
 router.get('/users',              admin.getUsers);
+router.post('/users',             admin.createUser);
 router.post('/users/bulk',        admin.bulkCreateUsers);
 router.put('/users/:id',          admin.updateUser);
 router.delete('/users/:id',       admin.deleteUser);
@@ -24,6 +25,7 @@ router.post('/users/unblock/:id', admin.unblockUser);
 // ── Courses ────────────────────────────────────────────────────────────────
 router.get('/courses',         admin.getCourses);
 router.post('/courses',        admin.createCourse);
+router.post('/courses/upload-thumbnail', admin.uploadThumbnail);
 router.put('/courses/:id',     admin.updateCourse);
 router.delete('/courses/:id',  admin.deleteCourse);
 

@@ -29,7 +29,7 @@ const findOrCreateGoogleUser = async ({ googleId, email, name, avatar }) => {
 
   // 3. Create a brand-new user
   const hash = null; // Google-only accounts have no local password
-  user = await User.create({ googleId, email: email || `${googleId}@google.com`, name, avatar, password: hash });
+  user = await User.create({ googleId, email: email || `${googleId}@google.com`, name, avatar, password: hash, status: 'pending' });
   return { user, isNew: true };
 };
 

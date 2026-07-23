@@ -6,6 +6,7 @@ const courseRoutes       = require('./course.routes');
 const announcementRoutes = require('./announcement.routes');
 const progressRoutes     = require('./progress.routes');
 const adminRoutes        = require('./admin.routes');
+const aiRoutes           = require('./ai.routes');
 
 const router = Router();
 
@@ -14,5 +15,6 @@ router.use('/courses',       courseRoutes);
 router.use('/announcements', announcementRoutes);
 router.use('/progress',      progressRoutes);
 router.use('/admin',         adminRoutes);
+router.use('/ai',            aiRoutes);
 
 module.exports = router;

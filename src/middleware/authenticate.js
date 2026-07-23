@@ -24,6 +24,13 @@ const authenticate = async (req, res, next) => {
     if (user.status === 'blocked') {
       return res.status(403).json({ error: 'Your account has been blocked by administrator.' });
     }
+    if (user.status === 'pending') {
+      if (req.method === 'GET' && req.originalUrl.endsWith('/auth/me')) {
+        // Allow GET /auth/me for status checking
+      } else {
+        return res.status(403).json({ error: 'admin need to approve your access request, please contact admin.' });
+      }
+    }
 
     req.user = decoded; // { sub, email, name, role, iat, exp }
     next();

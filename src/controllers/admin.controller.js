@@ -612,10 +612,72 @@ const deleteAnnouncement = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
+const createUser = async (req, res, next) => {
+  try {
+    const { name, email, role, status, password } = req.body;
+    if (!name || !email) {
+      return res.status(400).json({ error: 'Name and email are required' });
+    }
+    const existing = await User.findOne({ email: email.toLowerCase().trim() }).lean();
+    if (existing) {
+      return res.status(409).json({ error: 'Email already exists' });
+    }
+    const userData = {
+      name: name.trim(),
+      email: email.toLowerCase().trim(),
+      role: role || 'student',
+      status: status || 'active',
+    };
+    if (password) {
+      userData.password = await User.hashPassword(password);
+    }
+    const user = await User.create(userData);
+    res.status(201).json(user);
+  } catch (err) {
+    next(err);
+  }
+};
+
+const uploadThumbnail = async (req, res, next) => {
+  try {
+    const { image } = req.body;
+    if (!image) {
+      return res.status(400).json({ error: 'Image data is required' });
+    }
+
+    const fs = require('fs');
+    const path = require('path');
+
+    // Identify mime type
+    const matches = image.match(/^data:(image\/\w+);base64,/);
+    if (!matches) {
+      return res.status(400).json({ error: 'Invalid base64 image data' });
+    }
+    const mimeType = matches[1];
+    const extension = mimeType.split('/')[1] || 'png';
+
+    // Decode base64 image
+    const base64Data = image.replace(/^data:image\/\w+;base64,/, "");
+    const buffer = Buffer.from(base64Data, 'base64');
+
+    const filename = `thumbnail_${Date.now()}.${extension}`;
+    const uploadDir = path.join(__dirname, '..', '..', 'public', 'thumbnails');
+    const uploadPath = path.join(uploadDir, filename);
+
+    // Create directories if they do not exist
+    fs.mkdirSync(uploadDir, { recursive: true });
+    fs.writeFileSync(uploadPath, buffer);
+
+    res.json({ success: true, thumbnailUrl: `/public/thumbnails/${filename}` });
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
   getStats,
-  getUsers, updateUser, deleteUser, bulkCreateUsers, blockUser, unblockUser,
-  getCourses, createCourse, updateCourse, deleteCourse,
+  getUsers, createUser, updateUser, deleteUser, bulkCreateUsers, blockUser, unblockUser,
+  getCourses, createCourse, updateCourse, deleteCourse, uploadThumbnail,
   addModule, deleteModule,
   addTopic, deleteTopic,
   updateTopicNotes,
