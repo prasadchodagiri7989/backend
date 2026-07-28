@@ -31,7 +31,7 @@ const courses = [
         topics: [
           {
             title: 'Demo Topic 1', completed: false,
-            videoUrl: 'https://www.youtube.com/embed/x7X9w_GIm1s',
+            videoUrl: 'https://livid.com/watch/pprKswOhxAi0',
             notes: `<h2>Introduction to the Course</h2>
 <p>Welcome to <strong>Demo Course 1</strong>! This lesson introduces the core concepts you'll explore throughout the course.</p>
 <h3>What you'll learn</h3>
@@ -54,7 +54,7 @@ const courses = [
           },
           {
             title: 'Demo Topic 2', completed: false,
-            videoUrl: 'https://www.youtube.com/embed/x7X9w_GIm1s',
+            videoUrl: 'https://livid.com/watch/pprKswOhxAi0',
             notes: `<h2>Core Concepts</h2>
 <p>In this lesson we dive deeper into the core concepts introduced in the previous topic.</p>
 <h3>Learning Objectives</h3>
@@ -67,7 +67,7 @@ const courses = [
           },
           {
             title: 'Demo Topic 3', completed: false,
-            videoUrl: 'https://www.youtube.com/embed/x7X9w_GIm1s',
+            videoUrl: 'https://livid.com/watch/pprKswOhxAi0',
             notes: '<h2>Module Summary</h2><p>A quick recap of everything covered in Module 1 before you move on.</p>',
           },
         ],
@@ -75,9 +75,9 @@ const courses = [
       {
         title: 'Demo Module 2: Fundamentals',
         topics: [
-          { title: 'Demo Topic 4', completed: false, videoUrl: 'https://www.youtube.com/embed/x7X9w_GIm1s', notes: '<h2>Fundamentals Part 1</h2><p>Deep dive into the fundamantal techniques.</p>' },
-          { title: 'Demo Topic 5', completed: false, videoUrl: 'https://www.youtube.com/embed/x7X9w_GIm1s', notes: '' },
-          { title: 'Demo Topic 6', completed: false, videoUrl: 'https://www.youtube.com/embed/x7X9w_GIm1s', notes: '' },
+          { title: 'Demo Topic 4', completed: false, videoUrl: 'https://livid.com/watch/pprKswOhxAi0', notes: '<h2>Fundamentals Part 1</h2><p>Deep dive into the fundamantal techniques.</p>' },
+          { title: 'Demo Topic 5', completed: false, videoUrl: 'https://livid.com/watch/pprKswOhxAi0', notes: '' },
+          { title: 'Demo Topic 6', completed: false, videoUrl: 'https://livid.com/watch/pprKswOhxAi0', notes: '' },
         ],
       },
     ],
@@ -92,16 +92,16 @@ const courses = [
       {
         title: 'Demo Module 1: Getting Started',
         topics: [
-          { title: 'Demo Topic 1', completed: false, videoUrl: 'https://www.youtube.com/embed/x7X9w_GIm1s', notes: '<h2>Getting Started</h2><p>Everything you need to begin this intermediate course.</p>' },
-          { title: 'Demo Topic 2', completed: false, videoUrl: 'https://www.youtube.com/embed/x7X9w_GIm1s', notes: '' },
-          { title: 'Demo Topic 3', completed: false, videoUrl: 'https://www.youtube.com/embed/x7X9w_GIm1s', notes: '' },
+          { title: 'Demo Topic 1', completed: false, videoUrl: 'https://livid.com/watch/pprKswOhxAi0', notes: '<h2>Getting Started</h2><p>Everything you need to begin this intermediate course.</p>' },
+          { title: 'Demo Topic 2', completed: false, videoUrl: 'https://livid.com/watch/pprKswOhxAi0', notes: '' },
+          { title: 'Demo Topic 3', completed: false, videoUrl: 'https://livid.com/watch/pprKswOhxAi0', notes: '' },
         ],
       },
       {
         title: 'Demo Module 2: Core Concepts',
         topics: [
-          { title: 'Demo Topic 4', completed: false, videoUrl: 'https://www.youtube.com/embed/x7X9w_GIm1s', notes: '' },
-          { title: 'Demo Topic 5', completed: false, videoUrl: 'https://www.youtube.com/embed/x7X9w_GIm1s', notes: '' },
+          { title: 'Demo Topic 4', completed: false, videoUrl: 'https://livid.com/watch/pprKswOhxAi0', notes: '' },
+          { title: 'Demo Topic 5', completed: false, videoUrl: 'https://livid.com/watch/pprKswOhxAi0', notes: '' },
         ],
       },
     ],
@@ -116,8 +116,8 @@ const courses = [
       {
         title: 'Demo Module 1: Overview',
         topics: [
-          { title: 'Demo Topic 1', completed: false, videoUrl: 'https://www.youtube.com/embed/x7X9w_GIm1s', notes: '<h2>Advanced Overview</h2><p>An overview of the advanced concepts covered in this course.</p>' },
-          { title: 'Demo Topic 2', completed: false, videoUrl: 'https://www.youtube.com/embed/x7X9w_GIm1s', notes: '' },
+          { title: 'Demo Topic 1', completed: false, videoUrl: 'https://livid.com/watch/pprKswOhxAi0', notes: '<h2>Advanced Overview</h2><p>An overview of the advanced concepts covered in this course.</p>' },
+          { title: 'Demo Topic 2', completed: false, videoUrl: 'https://livid.com/watch/pprKswOhxAi0', notes: '' },
         ],
       },
     ],
@@ -132,9 +132,9 @@ const courses = [
       {
         title: 'Demo Module 1: Basics',
         topics: [
-          { title: 'Demo Topic 1', completed: false, videoUrl: 'https://www.youtube.com/embed/x7X9w_GIm1s', notes: '' },
-          { title: 'Demo Topic 2', completed: false, videoUrl: 'https://www.youtube.com/embed/x7X9w_GIm1s', notes: '' },
-          { title: 'Demo Topic 3', completed: false, videoUrl: 'https://www.youtube.com/embed/x7X9w_GIm1s', notes: '' },
+          { title: 'Demo Topic 1', completed: false, videoUrl: 'https://livid.com/watch/pprKswOhxAi0', notes: '' },
+          { title: 'Demo Topic 2', completed: false, videoUrl: 'https://livid.com/watch/pprKswOhxAi0', notes: '' },
+          { title: 'Demo Topic 3', completed: false, videoUrl: 'https://livid.com/watch/pprKswOhxAi0', notes: '' },
         ],
       },
     ],
@@ -149,8 +149,8 @@ const courses = [
       {
         title: 'Demo Module 1: Foundations',
         topics: [
-          { title: 'Demo Topic 1', completed: false, videoUrl: 'https://www.youtube.com/embed/x7X9w_GIm1s', notes: '' },
-          { title: 'Demo Topic 2', completed: false, videoUrl: 'https://www.youtube.com/embed/x7X9w_GIm1s', notes: '' },
+          { title: 'Demo Topic 1', completed: false, videoUrl: 'https://livid.com/watch/pprKswOhxAi0', notes: '' },
+          { title: 'Demo Topic 2', completed: false, videoUrl: 'https://livid.com/watch/pprKswOhxAi0', notes: '' },
         ],
       },
     ],
