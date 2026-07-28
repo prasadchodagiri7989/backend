@@ -305,6 +305,7 @@ const formatCourse = (c) => ({
       id:       t._id,
       title:    t.title,
       videoUrl: t.videoUrl,
+      videoId:  t.videoId || '',
       completed: t.completed,
       notes:    t.notes || '',
     })),
@@ -393,11 +394,11 @@ const deleteModule = async (req, res, next) => {
 // ─── Topic management ─────────────────────────────────────────────────────────
 const addTopic = async (req, res, next) => {
   try {
-    const { title, videoUrl } = req.body;
+    const { title, videoId } = req.body;
     if (!title) return res.status(400).json({ error: 'Title is required' });
     const course = await Course.findOneAndUpdate(
       { _id: req.params.id, 'modules._id': req.params.moduleId },
-      { $push: { 'modules.$.topics': { title, videoUrl: videoUrl || '', completed: false } } },
+      { $push: { 'modules.$.topics': { title, videoId: videoId || '', completed: false } } },
       { new: true }
     );
     if (!course) return res.status(404).json({ error: 'Course or module not found' });

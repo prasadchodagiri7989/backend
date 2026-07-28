@@ -31,7 +31,7 @@ const courses = [
         topics: [
           {
             title: 'Demo Topic 1', completed: false,
-            videoUrl: 'https://livid.com/watch/pprKswOhxAi0',
+            videoId: 'e3f48eff-6b17-47e7-a4cc-3433adebb20d',
             notes: `<h2>Introduction to the Course</h2>
 <p>Welcome to <strong>Demo Course 1</strong>! This lesson introduces the core concepts you'll explore throughout the course.</p>
 <h3>What you'll learn</h3>
@@ -54,7 +54,7 @@ const courses = [
           },
           {
             title: 'Demo Topic 2', completed: false,
-            videoUrl: 'https://livid.com/watch/pprKswOhxAi0',
+            videoId: 'e3f48eff-6b17-47e7-a4cc-3433adebb20d',
             notes: `<h2>Core Concepts</h2>
 <p>In this lesson we dive deeper into the core concepts introduced in the previous topic.</p>
 <h3>Learning Objectives</h3>

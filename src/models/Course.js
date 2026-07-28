@@ -19,6 +19,7 @@ const TopicSchema = new mongoose.Schema(
     title:     { type: String, required: true, trim: true },
     completed: { type: Boolean, default: false },
     videoUrl:  { type: String, trim: true },
+    videoId:   { type: String, trim: true },
     notes:     { type: String, default: '' },
   },
   { toJSON: makeTransform() }
