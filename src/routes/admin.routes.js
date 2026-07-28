@@ -30,13 +30,21 @@ router.put('/courses/:id',     admin.updateCourse);
 router.delete('/courses/:id',  admin.deleteCourse);
 
 // ── Modules ────────────────────────────────────────────────────────────────
+const adminExtra = require('../controllers/adminCourse.controller');
+
 router.post('/courses/:id/modules',              admin.addModule);
 router.delete('/courses/:id/modules/:moduleId',  admin.deleteModule);
+router.put('/courses/:id/modules/reorder',       adminExtra.reorderModules);
+router.put('/courses/:id/modules/:moduleId',     adminExtra.updateModule);
+router.post('/courses/:id/modules/:moduleId/duplicate', adminExtra.duplicateModule);
+router.post('/courses/:id/modules/:moduleId/copy-to/:targetCourseId', adminExtra.copyModuleToCourse);
 
 // ── Topics ─────────────────────────────────────────────────────────────────
 router.post('/courses/:id/modules/:moduleId/topics',                  admin.addTopic);
 router.delete('/courses/:id/modules/:moduleId/topics/:topicId',       admin.deleteTopic);
 router.put('/courses/:id/modules/:moduleId/topics/:topicId/notes',    admin.updateTopicNotes);
+router.put('/courses/:id/modules/:moduleId/topics/reorder',           adminExtra.reorderTopics);
+router.put('/courses/:id/modules/:moduleId/topics/:topicId',          adminExtra.updateTopic);
 
 // ── Activity ───────────────────────────────────────────────────────────────
 router.get('/activity',   admin.getActivity);
