@@ -29,6 +29,6 @@ export function generateSignedEmbedUrl(videoId: string, ttlSeconds: number = 300
     .update(message)
     .digest('hex');
 
-  // Base embed URL player.mediadelivery.net/embed/{libraryId}/{videoId}
-  return `https://player.mediadelivery.net/embed/${libraryId}/${videoId}?token=${token}&expires=${expires}`;
+  // Base embed URL iframe.mediadelivery.net/embed/{libraryId}/{videoId}
+  return `https://iframe.mediadelivery.net/embed/${libraryId}/${videoId}?token=${token}&expires=${expires}`;
 }
