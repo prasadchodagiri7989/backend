@@ -2,7 +2,7 @@
 
 require('dotenv').config();
 
-const app       = require('./src/app');
+const app = require('./src/app');
 const connectDB = require('./src/config/db');
 
 const PORT = process.env.PORT || 5000;
@@ -15,7 +15,7 @@ const PORT = process.env.PORT || 5000;
 
     // Start server (IMPORTANT: 0.0.0.0 for AWS)
     const server = app.listen(PORT, '0.0.0.0', () => {
-      console.log(`🚀 SkyLearn backend running on port ${PORT}`);
+      console.log(`🚀 BIM Era Academy backend running on port ${PORT}`);
     });
 
     // Graceful shutdown
