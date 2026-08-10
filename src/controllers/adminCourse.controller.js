@@ -18,6 +18,8 @@ const formatCourse = (c) => ({
     title: c.title,
     description: c.description,
     thumbnail: c.thumbnail,
+    isSample: c.isSample || false,
+    batches: c.batches || [],
     lessonsCount: c.lessonsCount,
     moduleCount: c.modules.length,
     topicCount: c.modules.reduce((sum, m) => sum + m.topics.length, 0),
@@ -31,6 +33,7 @@ const formatCourse = (c) => ({
             title: t.title,
             videoUrl: t.videoUrl || '',
             videoId: t.videoId || '',
+            videoType: t.videoType || 'bunny',
             completed: t.completed || false,
             notes: t.notes || '',
         })),
@@ -177,7 +180,7 @@ async function copyModuleToCourse(req, res, next) {
 async function updateTopic(req, res, next) {
     try {
         const { id, moduleId, topicId } = req.params;
-        const { title, videoId, videoUrl } = req.body;
+        const { title, videoId, videoUrl, videoType } = req.body;
         const course = await Course_1.default.findById(id);
         if (!course) {
             return res.status(404).json({ error: 'Course not found' });
@@ -196,6 +199,8 @@ async function updateTopic(req, res, next) {
             topic.videoId = videoId;
         if (videoUrl !== undefined)
             topic.videoUrl = videoUrl;
+        if (videoType !== undefined)
+            topic.videoType = videoType;
         await course.save();
         return res.json(formatCourse(course.toObject()));
     }

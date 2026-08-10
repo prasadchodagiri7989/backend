@@ -293,6 +293,8 @@ const formatCourse = (c) => ({
   title:        c.title,
   description:  c.description,
   thumbnail:    c.thumbnail,
+  isSample:     c.isSample || false,
+  batches:      c.batches || [],
   lessonsCount: c.lessonsCount,
   moduleCount:  c.modules.length,
   topicCount:   c.modules.reduce((sum, m) => sum + m.topics.length, 0),
@@ -304,10 +306,12 @@ const formatCourse = (c) => ({
     topics: m.topics.map((t) => ({
       id:       t._id,
       title:    t.title,
-      videoUrl: t.videoUrl,
+      videoUrl: t.videoUrl || '',
       videoId:  t.videoId || '',
+      videoType: t.videoType || 'bunny',
       completed: t.completed,
       notes:    t.notes || '',
+      attachments: t.attachments || [],
     })),
   })),
 });
@@ -323,12 +327,23 @@ const getCourses = async (req, res, next) => {
 
 const createCourse = async (req, res, next) => {
   try {
-    const { title, description, thumbnail } = req.body;
+    const { title, description, thumbnail, isSample, batches } = req.body;
     if (!title) return res.status(400).json({ error: 'Title is required' });
     const course = await Course.create({
-      title, description: description || '', thumbnail: thumbnail || '', modules: [],
+      title,
+      description: description || '',
+      thumbnail: thumbnail || '',
+      isSample: !!isSample,
+      batches: batches || [],
+      modules: [],
     });
-    res.status(201).json(course);
+
+    if (batches && batches.length > 0) {
+      const { syncCourseBatches } = require('./adminBatch.controller');
+      await syncCourseBatches(course._id, batches);
+    }
+
+    res.status(201).json(formatCourse(course.toObject()));
   } catch (err) {
     next(err);
   }
@@ -336,14 +351,20 @@ const createCourse = async (req, res, next) => {
 
 const updateCourse = async (req, res, next) => {
   try {
-    const allowed = ['title', 'description', 'thumbnail'];
+    const allowed = ['title', 'description', 'thumbnail', 'isSample', 'batches'];
     const updates = {};
     for (const k of allowed) {
       if (req.body[k] !== undefined) updates[k] = req.body[k];
     }
     const course = await Course.findByIdAndUpdate(req.params.id, updates, { new: true });
     if (!course) return res.status(404).json({ error: 'Course not found' });
-    res.json(course);
+
+    if (updates.batches !== undefined) {
+      const { syncCourseBatches } = require('./adminBatch.controller');
+      await syncCourseBatches(course._id, updates.batches);
+    }
+
+    res.json(formatCourse(course.toObject()));
   } catch (err) {
     next(err);
   }
@@ -394,11 +415,47 @@ const deleteModule = async (req, res, next) => {
 // ─── Topic management ─────────────────────────────────────────────────────────
 const addTopic = async (req, res, next) => {
   try {
-    const { title, videoId } = req.body;
+    const { title, videoId, videoUrl, videoType, attachmentFile, attachmentName } = req.body;
     if (!title) return res.status(400).json({ error: 'Title is required' });
+
+    let topicAttachments = [];
+    if (attachmentFile) {
+      const fs = require('fs');
+      const path = require('path');
+      const matches = attachmentFile.match(/^data:application\/pdf;base64,/);
+      let base64Data = attachmentFile;
+      if (matches) {
+        base64Data = attachmentFile.replace(/^data:application\/pdf;base64,/, "");
+      }
+      const buffer = Buffer.from(base64Data, 'base64');
+      const name = attachmentName || 'Attachment';
+      const filename = `attachment_${Date.now()}_${name.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+      const uploadDir = path.join(__dirname, '..', '..', 'public', 'attachments');
+      const uploadPath = path.join(uploadDir, filename);
+
+      fs.mkdirSync(uploadDir, { recursive: true });
+      fs.writeFileSync(uploadPath, buffer);
+
+      topicAttachments.push({
+        name,
+        url: `/public/attachments/${filename}`,
+      });
+    }
+
     const course = await Course.findOneAndUpdate(
       { _id: req.params.id, 'modules._id': req.params.moduleId },
-      { $push: { 'modules.$.topics': { title, videoId: videoId || '', completed: false } } },
+      {
+        $push: {
+          'modules.$.topics': {
+            title,
+            videoId: videoId || '',
+            videoUrl: videoUrl || '',
+            videoType: videoType || 'bunny',
+            completed: false,
+            attachments: topicAttachments
+          }
+        }
+      },
       { new: true }
     );
     if (!course) return res.status(404).json({ error: 'Course or module not found' });
@@ -420,6 +477,119 @@ const deleteTopic = async (req, res, next) => {
     if (!course) return res.status(404).json({ error: 'Course or module not found' });
     const count = course.modules.reduce((s, m) => s + m.topics.length, 0);
     await Course.findByIdAndUpdate(req.params.id, { lessonsCount: count });
+    res.json(formatCourse(course.toObject()));
+  } catch (err) {
+    next(err);
+  }
+};
+
+const addAttachment = async (req, res, next) => {
+  try {
+    const { id, moduleId, topicId } = req.params;
+    const { name, file } = req.body;
+    if (!name || !file) {
+      return res.status(400).json({ error: 'Name and file are required' });
+    }
+
+    const fs = require('fs');
+    const path = require('path');
+
+    const matches = file.match(/^data:application\/pdf;base64,/);
+    let base64Data = file;
+    if (matches) {
+      base64Data = file.replace(/^data:application\/pdf;base64,/, "");
+    }
+    const buffer = Buffer.from(base64Data, 'base64');
+
+    const filename = `attachment_${Date.now()}_${name.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+    const uploadDir = path.join(__dirname, '..', '..', 'public', 'attachments');
+    const uploadPath = path.join(uploadDir, filename);
+
+    fs.mkdirSync(uploadDir, { recursive: true });
+    fs.writeFileSync(uploadPath, buffer);
+
+    const course = await Course.findOneAndUpdate(
+      { _id: id, 'modules._id': moduleId, 'modules.topics._id': topicId },
+      {
+        $push: {
+          'modules.$[mod].topics.$[top].attachments': {
+            name,
+            url: `/public/attachments/${filename}`,
+          }
+        }
+      },
+      {
+        arrayFilters: [{ 'mod._id': moduleId }, { 'top._id': topicId }],
+        new: true,
+      }
+    );
+
+    if (!course) return res.status(404).json({ error: 'Course, module, or topic not found' });
+    res.status(201).json(formatCourse(course.toObject()));
+  } catch (err) {
+    next(err);
+  }
+};
+
+const renameAttachment = async (req, res, next) => {
+  try {
+    const { id, moduleId, topicId, attachmentId } = req.params;
+    const { name } = req.body;
+    if (!name) return res.status(400).json({ error: 'Name is required' });
+
+    const course = await Course.findOneAndUpdate(
+      { _id: id, 'modules._id': moduleId, 'modules.topics._id': topicId },
+      {
+        $set: {
+          'modules.$[mod].topics.$[top].attachments.$[att].name': name
+        }
+      },
+      {
+        arrayFilters: [{ 'mod._id': moduleId }, { 'top._id': topicId }, { 'att._id': attachmentId }],
+        new: true,
+      }
+    );
+
+    if (!course) return res.status(404).json({ error: 'Course, module, topic, or attachment not found' });
+    res.json(formatCourse(course.toObject()));
+  } catch (err) {
+    next(err);
+  }
+};
+
+const deleteAttachment = async (req, res, next) => {
+  try {
+    const { id, moduleId, topicId, attachmentId } = req.params;
+
+    const courseCheck = await Course.findById(id);
+    if (!courseCheck) return res.status(404).json({ error: 'Course not found' });
+    const mod = courseCheck.modules.id(moduleId);
+    if (!mod) return res.status(404).json({ error: 'Module not found' });
+    const topic = mod.topics.id(topicId);
+    if (!topic) return res.status(404).json({ error: 'Topic not found' });
+    const att = topic.attachments.id(attachmentId);
+    if (!att) return res.status(404).json({ error: 'Attachment not found' });
+
+    const fs = require('fs');
+    const path = require('path');
+    const filePath = path.join(__dirname, '..', '..', att.url);
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
+
+    const course = await Course.findOneAndUpdate(
+      { _id: id, 'modules._id': moduleId, 'modules.topics._id': topicId },
+      {
+        $pull: {
+          'modules.$[mod].topics.$[top].attachments': { _id: attachmentId }
+        }
+      },
+      {
+        arrayFilters: [{ 'mod._id': moduleId }, { 'top._id': topicId }],
+        new: true,
+      }
+    );
+
     res.json(formatCourse(course.toObject()));
   } catch (err) {
     next(err);
@@ -685,4 +855,5 @@ module.exports = {
   getActivity,
   getSuspiciousActivity,
   getAnnouncements, createAnnouncement, updateAnnouncement, deleteAnnouncement,
+  addAttachment, renameAttachment, deleteAttachment,
 };

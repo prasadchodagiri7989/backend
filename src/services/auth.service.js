@@ -35,7 +35,7 @@ const findOrCreateGoogleUser = async ({ googleId, email, name, avatar }) => {
 
 const createUser = async ({ name, email, password }) => {
   const hash = await User.hashPassword(password);
-  return User.create({ name, email: email.toLowerCase(), password: hash });
+  return User.create({ name, email: email.toLowerCase(), password: hash, status: 'pending' });
 };
 
 // ─── Login history ────────────────────────────────────────────────────────────

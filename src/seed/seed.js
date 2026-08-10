@@ -1,10 +1,5 @@
 'use strict';
 
-/**
- * Seed script — populates MongoDB with initial data.
- * Run from skylearn-backend root:  npm run seed
- */
-
 require('dotenv').config({ path: require('path').join(__dirname, '..', '..', '.env') });
 const mongoose     = require('mongoose');
 const connectDB    = require('../config/db');
@@ -13,238 +8,181 @@ const Announcement = require('../models/Announcement');
 const Certificate  = require('../models/Certificate');
 const User         = require('../models/User');
 const LoginHistory = require('../models/LoginHistory');
+const Batch        = require('../models/Batch');
 
 const BASE_URL = process.env.BASE_URL || 'http://localhost:5000';
-
-// ─── Seed data ────────────────────────────────────────────────────────────────
-
-const courses = [
-  {
-    title: 'Demo Course 1',
-    description:
-      'An introductory course covering foundational concepts and methodologies for structured learning.',
-    thumbnail: `${BASE_URL}/thumbnails/course-thumb-1.jpg`,
-    progress: 0,
-    modules: [
-      {
-        title: 'Demo Module 1: Introduction',
-        topics: [
-          {
-            title: 'Demo Topic 1', completed: false,
-            videoId: 'e3f48eff-6b17-47e7-a4cc-3433adebb20d',
-            notes: `<h2>Introduction to the Course</h2>
-<p>Welcome to <strong>Demo Course 1</strong>! This lesson introduces the core concepts you'll explore throughout the course.</p>
-<h3>What you'll learn</h3>
-<ul>
-  <li>Foundational principles of structured learning</li>
-  <li>How to navigate the course materials</li>
-  <li>Setting goals for your learning journey</li>
-</ul>
-<h3>Key Terms</h3>
-<dl>
-  <dt><strong>Structured Learning</strong></dt>
-  <dd>An organised approach to learning with defined objectives and measurable outcomes.</dd>
-  <dt><strong>Active Recall</strong></dt>
-  <dd>A study technique where you attempt to recall information without referring to notes.</dd>
-</dl>
-<blockquote>
-  <p>"The beautiful thing about learning is that no one can take it away from you." — B.B. King</p>
-</blockquote>
-<p>Take your time with this lesson. Use the mark‑as‑complete button when you are ready to move on.</p>`,
-          },
-          {
-            title: 'Demo Topic 2', completed: false,
-            videoId: 'e3f48eff-6b17-47e7-a4cc-3433adebb20d',
-            notes: `<h2>Core Concepts</h2>
-<p>In this lesson we dive deeper into the core concepts introduced in the previous topic.</p>
-<h3>Learning Objectives</h3>
-<ol>
-  <li>Understand the theoretical framework behind the subject</li>
-  <li>Identify real-world applications</li>
-  <li>Apply concepts in practice exercises</li>
-</ol>
-<p>Make sure to watch the full video before proceeding to the quiz at the end of this module.</p>`,
-          },
-          {
-            title: 'Demo Topic 3', completed: false,
-            videoUrl: 'https://livid.com/watch/pprKswOhxAi0',
-            notes: '<h2>Module Summary</h2><p>A quick recap of everything covered in Module 1 before you move on.</p>',
-          },
-        ],
-      },
-      {
-        title: 'Demo Module 2: Fundamentals',
-        topics: [
-          { title: 'Demo Topic 4', completed: false, videoUrl: 'https://livid.com/watch/pprKswOhxAi0', notes: '<h2>Fundamentals Part 1</h2><p>Deep dive into the fundamantal techniques.</p>' },
-          { title: 'Demo Topic 5', completed: false, videoUrl: 'https://livid.com/watch/pprKswOhxAi0', notes: '' },
-          { title: 'Demo Topic 6', completed: false, videoUrl: 'https://livid.com/watch/pprKswOhxAi0', notes: '' },
-        ],
-      },
-    ],
-  },
-  {
-    title: 'Demo Course 2',
-    description:
-      'A comprehensive exploration of intermediate topics with practical exercises and assessments.',
-    thumbnail: `${BASE_URL}/thumbnails/course-thumb-2.jpg`,
-    progress: 0,
-    modules: [
-      {
-        title: 'Demo Module 1: Getting Started',
-        topics: [
-          { title: 'Demo Topic 1', completed: false, videoUrl: 'https://livid.com/watch/pprKswOhxAi0', notes: '<h2>Getting Started</h2><p>Everything you need to begin this intermediate course.</p>' },
-          { title: 'Demo Topic 2', completed: false, videoUrl: 'https://livid.com/watch/pprKswOhxAi0', notes: '' },
-          { title: 'Demo Topic 3', completed: false, videoUrl: 'https://livid.com/watch/pprKswOhxAi0', notes: '' },
-        ],
-      },
-      {
-        title: 'Demo Module 2: Core Concepts',
-        topics: [
-          { title: 'Demo Topic 4', completed: false, videoUrl: 'https://livid.com/watch/pprKswOhxAi0', notes: '' },
-          { title: 'Demo Topic 5', completed: false, videoUrl: 'https://livid.com/watch/pprKswOhxAi0', notes: '' },
-        ],
-      },
-    ],
-  },
-  {
-    title: 'Demo Course 3',
-    description:
-      'Advanced material designed to deepen understanding and build mastery through guided practice.',
-    thumbnail: `${BASE_URL}/thumbnails/course-thumb-3.jpg`,
-    progress: 0,
-    modules: [
-      {
-        title: 'Demo Module 1: Overview',
-        topics: [
-          { title: 'Demo Topic 1', completed: false, videoUrl: 'https://livid.com/watch/pprKswOhxAi0', notes: '<h2>Advanced Overview</h2><p>An overview of the advanced concepts covered in this course.</p>' },
-          { title: 'Demo Topic 2', completed: false, videoUrl: 'https://livid.com/watch/pprKswOhxAi0', notes: '' },
-        ],
-      },
-    ],
-  },
-  {
-    title: 'Demo Course 4',
-    description:
-      'A hands-on workshop focusing on applied techniques and real-world problem solving.',
-    thumbnail: `${BASE_URL}/thumbnails/course-thumb-4.jpg`,
-    progress: 0,
-    modules: [
-      {
-        title: 'Demo Module 1: Basics',
-        topics: [
-          { title: 'Demo Topic 1', completed: false, videoUrl: 'https://livid.com/watch/pprKswOhxAi0', notes: '' },
-          { title: 'Demo Topic 2', completed: false, videoUrl: 'https://livid.com/watch/pprKswOhxAi0', notes: '' },
-          { title: 'Demo Topic 3', completed: false, videoUrl: 'https://livid.com/watch/pprKswOhxAi0', notes: '' },
-        ],
-      },
-    ],
-  },
-  {
-    title: 'Demo Course 5',
-    description:
-      'A specialized track exploring niche areas with curated content and expert guidance.',
-    thumbnail: `${BASE_URL}/thumbnails/course-thumb-5.jpg`,
-    progress: 0,
-    modules: [
-      {
-        title: 'Demo Module 1: Foundations',
-        topics: [
-          { title: 'Demo Topic 1', completed: false, videoUrl: 'https://livid.com/watch/pprKswOhxAi0', notes: '' },
-          { title: 'Demo Topic 2', completed: false, videoUrl: 'https://livid.com/watch/pprKswOhxAi0', notes: '' },
-        ],
-      },
-    ],
-  },
-];
-
-const announcements = [
-  {
-    title: 'Platform Update',
-    description:
-      "We've improved performance and added new accessibility features across the platform.",
-    date: '2026-03-08',
-  },
-  {
-    title: 'New Courses Available',
-    description:
-      'Five new courses have been added to the catalog covering emerging topics.',
-    date: '2026-03-05',
-  },
-  {
-    title: 'Learning Tips',
-    description:
-      'Discover effective study techniques to maximize your retention and understanding.',
-    date: '2026-03-01',
-  },
-];
-
-const certificates = [
-  { courseTitle: 'Demo Course 1 Certificate', completionDate: '2026-02-15' },
-  { courseTitle: 'Demo Course 3 Certificate', completionDate: '2026-03-01' },
-];
-
-// Demo users (plain-text passwords hashed at seed time)
-const usersRaw = [
-  { name: 'Admin User',   email: 'admin@example.com',   password: 'Admin123!',   role: 'admin'   },
-  { name: 'Student User', email: 'student@example.com', password: 'Student123!', role: 'student' },
-  { name: 'Demo User',    email: 'demo@example.com',    password: 'Demo123!',    role: 'student' },
-];
-
-// ─── Seeder ──────────────────────────────────────────────────────────────────
 
 const seed = async () => {
   await connectDB();
 
-  // Clear existing data and rebuild indexes cleanly
+  // Clear existing collections
   await Promise.all([
     Course.deleteMany({}),
     Announcement.deleteMany({}),
     Certificate.deleteMany({}),
     LoginHistory.deleteMany({}),
+    User.deleteMany({}),
+    Batch.deleteMany({}),
   ]);
-  // Drop and re-sync User indexes so sparse:true on googleId takes effect on Atlas
-  await User.deleteMany({});
-  await User.collection.dropIndexes().catch(() => {}); // ignore if no indexes
+
+  // Drop and re-sync User indexes so sparse:true on googleId takes effect
+  await User.collection.dropIndexes().catch(() => {});
   await User.syncIndexes();
 
-  // Hash passwords and create users
-  const userDocs = await Promise.all(
-    usersRaw.map(async ({ name, email, password, role }) => {
-      const hash = await User.hashPassword(password);
-      return User.create({ name, email, password: hash, role });
-    })
-  );
+  // 1. Create Batches
+  const batch1 = await Batch.create({
+    name: 'Batch Alpha',
+    description: 'Morning lectures on advanced engineering principles.',
+  });
+  const batch2 = await Batch.create({
+    name: 'Batch Beta',
+    description: 'Evening classes on stack architectures and fullstack projects.',
+  });
 
-  // Sample login history for the first user
-  const demoLoginHistory = [
-    { userId: userDocs[1]._id, ip: '192.168.1.10', userAgent: 'Mozilla/5.0 (Windows NT 10.0) Chrome/120', method: 'email',  createdAt: new Date('2026-03-28T09:00:00Z') },
-    { userId: userDocs[1]._id, ip: '192.168.1.10', userAgent: 'Mozilla/5.0 (Windows NT 10.0) Chrome/120', method: 'email',  createdAt: new Date('2026-03-29T14:22:00Z') },
-    { userId: userDocs[1]._id, ip: '10.0.0.5',     userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17) Safari', method: 'google', createdAt: new Date('2026-04-01T08:15:00Z') },
-    { userId: userDocs[0]._id, ip: '127.0.0.1',    userAgent: 'Mozilla/5.0 (Macintosh) Chrome/120',         method: 'email',  createdAt: new Date('2026-04-02T11:00:00Z') },
-  ];
+  // 2. Create Courses
+  const sampleCourse = await Course.create({
+    title: 'Introduction to SkyLearn (Sample)',
+    description: 'An introductory course showing the features of the SkyLearn LMS. Available to all users, even pending approval.',
+    thumbnail: `${BASE_URL}/thumbnails/course-thumb-1.jpg`,
+    isSample: true,
+    batches: [],
+    lessonsCount: 2,
+    modules: [
+      {
+        title: 'Welcome to SkyLearn',
+        topics: [
+          {
+            title: 'Exploring the Dashboard',
+            completed: false,
+            videoType: 'youtube',
+            videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+            notes: '<h2>Welcome to the LMS!</h2><p>Here you can explore features, view modules, and see how simple learning is on SkyLearn.</p>'
+          },
+          {
+            title: 'Learning Best Practices',
+            completed: false,
+            videoType: 'bunny',
+            videoId: 'e3f48eff-6b17-47e7-a4cc-3433adebb20d',
+            notes: '<h2>Tips for Success</h2><p>Set a schedule, practice active recall, and make the most of notes.</p>'
+          }
+        ]
+      }
+    ]
+  });
 
-  // Insert fresh data — compute lessonsCount from actual topics
-  const coursesWithCount = courses.map((c) => ({
-    ...c,
-    lessonsCount: c.modules.reduce((sum, m) => sum + m.topics.length, 0),
-  }));
+  const courseAlpha = await Course.create({
+    title: 'Advanced Frontend Frameworks (React & Vue)',
+    description: 'A deep dive into virtual DOM rendering, state management machines, and custom hooks.',
+    thumbnail: `${BASE_URL}/thumbnails/course-thumb-2.jpg`,
+    isSample: false,
+    batches: [batch1._id],
+    lessonsCount: 2,
+    modules: [
+      {
+        title: 'Advanced React State Patterns',
+        topics: [
+          {
+            title: 'Vite & TS Setup',
+            completed: false,
+            videoType: 'bunny',
+            videoId: 'e3f48eff-6b17-47e7-a4cc-3433adebb20d',
+            notes: '<h2>Initializing a modern app</h2><p>Configure TS compiler options, ESLint rules, and vite aliases.</p>'
+          },
+          {
+            title: 'Building Custom State Machines',
+            completed: false,
+            videoType: 'youtube',
+            videoUrl: 'https://www.youtube.com/watch?v=Ke90Tje7VS0',
+            notes: '<h2>Designing clean handlers</h2><p>Separate UI side-effects from controller state triggers.</p>'
+          }
+        ]
+      }
+    ]
+  });
 
-  await Promise.all([
-    Course.insertMany(coursesWithCount),
-    Announcement.insertMany(announcements),
-    Certificate.insertMany(certificates),
-    LoginHistory.insertMany(demoLoginHistory),
-  ]);
+  const courseBeta = await Course.create({
+    title: 'Node.js & MongoDB Backend Engineering',
+    description: 'Learn middleware construction, security policies, rate-limiting, and REST API design.',
+    thumbnail: `${BASE_URL}/thumbnails/course-thumb-3.jpg`,
+    isSample: false,
+    batches: [batch2._id],
+    lessonsCount: 1,
+    modules: [
+      {
+        title: 'Mongoose Schemas & Controllers',
+        topics: [
+          {
+            title: 'Modeling Relationships',
+            completed: false,
+            videoType: 'bunny',
+            videoId: 'e3f48eff-6b17-47e7-a4cc-3433adebb20d',
+            notes: '<h2>Linking documents</h2><p>Use refs, population queries, and pre-save hooks to maintain DB synchrony.</p>'
+          }
+        ]
+      }
+    ]
+  });
 
-  console.log(`Seeded: ${courses.length} courses, ${announcements.length} announcements, ${certificates.length} certificates`);
-  console.log(`Seeded: ${userDocs.length} users`);
-  console.log('\nDemo credentials:');
-  usersRaw.forEach(({ email, password, role }) =>
-    console.log(`  [${role}]  ${email}  /  ${password}`)
-  );
+  // Link courses back to Batches to keep sync Course <-> Batch relationships
+  batch1.courses.push(courseAlpha._id);
+  await batch1.save();
+
+  batch2.courses.push(courseBeta._id);
+  await batch2.save();
+
+  // 3. Create Users
+  // Admin user
+  const adminHash = await User.hashPassword('BIMbim!@#123');
+  await User.create({
+    name: 'BIM Era Admin',
+    email: 'bimerapvtltd@gmail.com',
+    password: adminHash,
+    role: 'admin',
+    status: 'active',
+  });
+
+  // Pending Student User
+  const studentHash = await User.hashPassword('Student123!');
+  await User.create({
+    name: 'Jane Doe',
+    email: 'student@example.com',
+    password: studentHash,
+    role: 'student',
+    status: 'pending',
+  });
+
+  // Active Student User (preset in Batch Alpha)
+  const activeStudentHash = await User.hashPassword('Student123!');
+  const activeStudent = await User.create({
+    name: 'John Smith',
+    email: 'active@example.com',
+    password: activeStudentHash,
+    role: 'student',
+    status: 'active',
+  });
+
+  // Add to batch1
+  batch1.members.push(activeStudent._id);
+  await batch1.save();
+
+  // 4. Create announcements
+  await Announcement.create({
+    title: 'SkyLearn LMS Launch',
+    description: 'We are proud to introduce SkyLearn LMS with Batch segmentation and custom video sources.',
+    targetRole: 'all',
+    date: '2026-08-05',
+  });
+
+  console.log('Seeding complete successfully!');
+  console.log('\nUsers Seeded:');
+  console.log('  [admin]   bimerapvtltd@gmail.com  /  BIMbim!@#123');
+  console.log('  [student] student@example.com     /  Student123! (status: pending)');
+  console.log('  [student] active@example.com      /  Student123! (status: active, Batch Alpha)');
+  console.log('\nBatches Seeded:');
+  console.log('  - Batch Alpha (has 1 member, 1 course)');
+  console.log('  - Batch Beta (has 0 members, 1 course)');
 
   await mongoose.disconnect();
-  console.log('\nDisconnected. Seeding complete.');
 };
 
 seed().catch((err) => {

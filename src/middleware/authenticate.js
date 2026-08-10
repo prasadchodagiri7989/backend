@@ -25,14 +25,24 @@ const authenticate = async (req, res, next) => {
       return res.status(403).json({ error: 'Your account has been blocked by administrator.' });
     }
     if (user.status === 'pending') {
-      if (req.method === 'GET' && req.originalUrl.endsWith('/auth/me')) {
-        // Allow GET /auth/me for status checking
-      } else {
+      const url = req.originalUrl;
+      const isAllowed =
+        (req.method === 'GET' && url.endsWith('/auth/me')) ||
+        (req.method === 'GET' && url.endsWith('/batches/public')) ||
+        (req.method === 'POST' && url.endsWith('/auth/approve')) ||
+        (req.method === 'GET' && url.includes('/courses')) ||
+        (req.method === 'GET' && url.includes('/progress')) ||
+        (req.method === 'POST' && url.includes('/progress'));
+
+      if (!isAllowed) {
         return res.status(403).json({ error: 'admin need to approve your access request, please contact admin.' });
       }
     }
 
-    req.user = decoded; // { sub, email, name, role, iat, exp }
+    req.user = {
+      ...decoded,
+      status: user.status
+    };
     next();
   } catch {
     return res.status(401).json({ error: 'Invalid or expired token' });

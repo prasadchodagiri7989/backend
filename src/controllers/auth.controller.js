@@ -220,7 +220,6 @@ const updateDeviceInfo = async (req, res, next) => {
     next(err);
   }
 };
-
 // ─── POST /api/auth/capture-face ─────────────────────────────────────────────
 const fs   = require('fs');
 const path = require('path');
@@ -259,4 +258,43 @@ const captureFace = async (req, res, next) => {
   }
 };
 
-module.exports = { register, login, me, loginHistory, googleCallback, suspiciousCheck, updateDeviceInfo, captureFace };
+const getPublicBatches = async (req, res, next) => {
+  try {
+    const Batch = require('../models/Batch');
+    const batches = await Batch.find().select('name description').lean();
+    res.json(batches.map(b => ({ id: b._id.toString(), name: b.name, description: b.description })));
+  } catch (err) {
+    next(err);
+  }
+};
+
+const approve = async (req, res, next) => {
+  try {
+    const { batchId } = req.body;
+    if (!batchId) {
+      return res.status(400).json({ error: 'Batch ID is required' });
+    }
+    const Batch = require('../models/Batch');
+    const batch = await Batch.findById(batchId);
+    if (!batch) {
+      return res.status(404).json({ error: 'Batch not found' });
+    }
+
+    const userId = req.user.sub;
+    const user = await User.findByIdAndUpdate(userId, { status: 'active' }, { new: true });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    if (!batch.members.includes(userId)) {
+      batch.members.push(userId);
+      await batch.save();
+    }
+
+    res.json({ message: 'Account approved successfully', user: safeUser(user) });
+  } catch (err) {
+    next(err);
+  }
+};
+
+module.exports = { register, login, me, loginHistory, googleCallback, suspiciousCheck, updateDeviceInfo, captureFace, getPublicBatches, approve };

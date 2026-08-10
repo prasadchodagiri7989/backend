@@ -20,7 +20,14 @@ const TopicSchema = new mongoose.Schema(
     completed: { type: Boolean, default: false },
     videoUrl:  { type: String, trim: true },
     videoId:   { type: String, trim: true },
+    videoType: { type: String, enum: ['bunny', 'youtube'], default: 'bunny' },
     notes:     { type: String, default: '' },
+    attachments: [
+      {
+        name: { type: String, required: true, trim: true },
+        url:  { type: String, required: true, trim: true },
+      }
+    ],
   },
   { toJSON: makeTransform() }
 );
@@ -43,6 +50,8 @@ const CourseSchema = new mongoose.Schema(
     progress:     { type: Number, default: 0, min: 0, max: 100 },
     lessonsCount: { type: Number, default: 0, min: 0 },
     modules:      { type: [ModuleSchema], default: [] },
+    isSample:     { type: Boolean, default: false },
+    batches:      [{ type: mongoose.Schema.Types.ObjectId, ref: 'Batch' }],
   },
   { timestamps: true, toJSON: makeTransform(true) }
 );

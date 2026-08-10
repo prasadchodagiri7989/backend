@@ -45,6 +45,9 @@ router.delete('/courses/:id/modules/:moduleId/topics/:topicId',       admin.dele
 router.put('/courses/:id/modules/:moduleId/topics/:topicId/notes',    admin.updateTopicNotes);
 router.put('/courses/:id/modules/:moduleId/topics/reorder',           adminExtra.reorderTopics);
 router.put('/courses/:id/modules/:moduleId/topics/:topicId',          adminExtra.updateTopic);
+router.post('/courses/:id/modules/:moduleId/topics/:topicId/attachments',                  admin.addAttachment);
+router.put('/courses/:id/modules/:moduleId/topics/:topicId/attachments/:attachmentId',    admin.renameAttachment);
+router.delete('/courses/:id/modules/:moduleId/topics/:topicId/attachments/:attachmentId', admin.deleteAttachment);
 
 // ── Activity ───────────────────────────────────────────────────────────────
 router.get('/activity',   admin.getActivity);
@@ -57,5 +60,17 @@ router.get('/announcements',              admin.getAnnouncements);
 router.post('/announcements',             admin.createAnnouncement);
 router.put('/announcements/:announcementId',    admin.updateAnnouncement);
 router.delete('/announcements/:announcementId', admin.deleteAnnouncement);
+
+// ── Batches ────────────────────────────────────────────────────────────────
+const adminBatch = require('../controllers/adminBatch.controller');
+router.get('/batches',                  adminBatch.getBatches);
+router.get('/batches/:id',             adminBatch.getBatchById);
+router.post('/batches',                 adminBatch.createBatch);
+router.put('/batches/:id',              adminBatch.updateBatch);
+router.delete('/batches/:id',           adminBatch.deleteBatch);
+router.post('/batches/:id/members',     adminBatch.addMember);
+router.delete('/batches/:id/members/:userId', adminBatch.removeMember);
+router.post('/batches/:id/courses',     adminBatch.alignCourses);
+router.post('/batches/:id/courses/:courseId/modules/reorder', adminBatch.reorderBatchModules);
 
 module.exports = router;

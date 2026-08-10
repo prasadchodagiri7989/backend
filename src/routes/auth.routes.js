@@ -57,5 +57,7 @@ router.get('/login-history', authenticate, authController.loginHistory);
 router.get('/suspicious-check', authenticate, authController.suspiciousCheck);
 router.post('/device', authenticate, authController.updateDeviceInfo);
 router.post('/capture-face', authenticate, authController.captureFace);
+router.get('/batches/public', authenticate, authController.getPublicBatches);
+router.post('/approve', authenticate, authController.approve);
 
 module.exports = router;
