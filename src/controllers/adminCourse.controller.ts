@@ -22,6 +22,8 @@ const formatCourse = (c: any) => ({
       title:    t.title,
       videoUrl: t.videoUrl || '',
       videoId:  t.videoId || '',
+      videoType: t.videoType || 'bunny',
+      bunnyLibraryId: t.bunnyLibraryId || '',
       completed: t.completed || false,
       notes:    t.notes || '',
     })),
@@ -118,13 +120,14 @@ export async function duplicateModule(req: Request, res: Response, next: NextFun
       return res.status(404).json({ error: 'Module not found' });
     }
 
-    // Perform deep copy and construct a new module subdocument
     const duplicatedModule = {
       title: `${sourceModule.title} (Copy)`,
       topics: sourceModule.topics.map((t: any) => ({
         title: t.title,
         videoUrl: t.videoUrl,
         videoId: t.videoId,
+        videoType: t.videoType,
+        bunnyLibraryId: t.bunnyLibraryId,
         notes: t.notes,
         completed: false
       }))
@@ -165,13 +168,14 @@ export async function copyModuleToCourse(req: Request, res: Response, next: Next
       return res.status(404).json({ error: 'Module not found' });
     }
 
-    // Perform deep copy
     const copiedModule = {
       title: `${sourceModule.title} (from ${sourceCourse.title})`,
       topics: sourceModule.topics.map((t: any) => ({
         title: t.title,
         videoUrl: t.videoUrl,
         videoId: t.videoId,
+        videoType: t.videoType,
+        bunnyLibraryId: t.bunnyLibraryId,
         notes: t.notes,
         completed: false
       }))
@@ -196,7 +200,7 @@ export async function copyModuleToCourse(req: Request, res: Response, next: Next
 export async function updateTopic(req: Request, res: Response, next: NextFunction) {
   try {
     const { id, moduleId, topicId } = req.params;
-    const { title, videoId, videoUrl } = req.body;
+    const { title, videoId, videoUrl, videoType, bunnyLibraryId } = req.body;
 
     const course = await Course.findById(id);
     if (!course) {
@@ -216,6 +220,8 @@ export async function updateTopic(req: Request, res: Response, next: NextFunctio
     if (title !== undefined) topic.title = title;
     if (videoId !== undefined) topic.videoId = videoId;
     if (videoUrl !== undefined) topic.videoUrl = videoUrl;
+    if (videoType !== undefined) topic.videoType = videoType;
+    if (bunnyLibraryId !== undefined) topic.bunnyLibraryId = bunnyLibraryId;
 
     await course.save();
 

@@ -21,6 +21,7 @@ const TopicSchema = new mongoose.Schema(
     videoUrl:  { type: String, trim: true },
     videoId:   { type: String, trim: true },
     videoType: { type: String, enum: ['bunny', 'youtube'], default: 'bunny' },
+    bunnyLibraryId: { type: String, trim: true },
     notes:     { type: String, default: '' },
     attachments: [
       {

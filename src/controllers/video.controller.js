@@ -12,7 +12,7 @@ async function getVideoSignedUrl(req, res, next) {
             return res.status(404).json({ error: 'Video not found.' });
         }
         // Generate URL with 5 minute expiration (300 seconds)
-        const signedUrl = (0, bunny_service_1.generateSignedEmbedUrl)(req.lesson.videoId, 300);
+        const signedUrl = (0, bunny_service_1.generateSignedEmbedUrl)(req.lesson.videoId, req.lesson.bunnyLibraryId || '', 300);
         return res.json({ url: signedUrl });
     }
     catch (err) {

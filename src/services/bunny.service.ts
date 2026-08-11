@@ -8,12 +8,11 @@ import crypto from 'crypto';
  * @param ttlSeconds Expiration timeframe in seconds (default is 5 minutes / 300s)
  * @returns Fully qualified secure embed URL
  */
-export function generateSignedEmbedUrl(videoId: string, ttlSeconds: number = 300): string {
-  const libraryId = process.env.BUNNY_LIBRARY_ID;
+export function generateSignedEmbedUrl(videoId: string, libraryId: string, ttlSeconds: number = 300): string {
   const tokenKey = process.env.BUNNY_TOKEN_KEY;
 
   if (!libraryId) {
-    throw new Error('BUNNY_LIBRARY_ID is not defined in the environment variables.');
+    throw new Error('Bunny library ID is required for video streaming.');
   }
   if (!tokenKey) {
     throw new Error('BUNNY_TOKEN_KEY is not defined in the environment variables.');

@@ -17,7 +17,7 @@ export async function getVideoSignedUrl(
     }
 
     // Generate URL with 5 minute expiration (300 seconds)
-    const signedUrl = generateSignedEmbedUrl(req.lesson.videoId, 300);
+    const signedUrl = generateSignedEmbedUrl(req.lesson.videoId, req.lesson.bunnyLibraryId || '', 300);
 
     return res.json({ url: signedUrl });
   } catch (err) {

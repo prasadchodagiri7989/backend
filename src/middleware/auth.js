@@ -66,7 +66,8 @@ async function authorizeVideoAccess(req, res, next) {
         req.lesson = {
             id: lesson._id.toString(),
             title: lesson.title,
-            videoId: lesson.videoId
+            videoId: lesson.videoId,
+            bunnyLibraryId: lesson.bunnyLibraryId
         };
         next();
     }

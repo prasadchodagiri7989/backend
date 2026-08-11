@@ -309,6 +309,7 @@ const formatCourse = (c) => ({
       videoUrl: t.videoUrl || '',
       videoId:  t.videoId || '',
       videoType: t.videoType || 'bunny',
+      bunnyLibraryId: t.bunnyLibraryId || '',
       completed: t.completed,
       notes:    t.notes || '',
       attachments: t.attachments || [],
@@ -415,7 +416,7 @@ const deleteModule = async (req, res, next) => {
 // ─── Topic management ─────────────────────────────────────────────────────────
 const addTopic = async (req, res, next) => {
   try {
-    const { title, videoId, videoUrl, videoType, attachmentFile, attachmentName } = req.body;
+    const { title, videoId, videoUrl, videoType, attachmentFile, attachmentName, bunnyLibraryId } = req.body;
     if (!title) return res.status(400).json({ error: 'Title is required' });
 
     let topicAttachments = [];
@@ -451,6 +452,7 @@ const addTopic = async (req, res, next) => {
             videoId: videoId || '',
             videoUrl: videoUrl || '',
             videoType: videoType || 'bunny',
+            bunnyLibraryId: bunnyLibraryId || '',
             completed: false,
             attachments: topicAttachments
           }

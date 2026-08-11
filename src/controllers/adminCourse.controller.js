@@ -34,6 +34,7 @@ const formatCourse = (c) => ({
             videoUrl: t.videoUrl || '',
             videoId: t.videoId || '',
             videoType: t.videoType || 'bunny',
+            bunnyLibraryId: t.bunnyLibraryId || '',
             completed: t.completed || false,
             notes: t.notes || '',
         })),
@@ -119,6 +120,8 @@ async function duplicateModule(req, res, next) {
                 title: t.title,
                 videoUrl: t.videoUrl,
                 videoId: t.videoId,
+                videoType: t.videoType,
+                bunnyLibraryId: t.bunnyLibraryId,
                 notes: t.notes,
                 completed: false
             }))
@@ -159,6 +162,8 @@ async function copyModuleToCourse(req, res, next) {
                 title: t.title,
                 videoUrl: t.videoUrl,
                 videoId: t.videoId,
+                videoType: t.videoType,
+                bunnyLibraryId: t.bunnyLibraryId,
                 notes: t.notes,
                 completed: false
             }))
@@ -180,7 +185,7 @@ async function copyModuleToCourse(req, res, next) {
 async function updateTopic(req, res, next) {
     try {
         const { id, moduleId, topicId } = req.params;
-        const { title, videoId, videoUrl, videoType } = req.body;
+        const { title, videoId, videoUrl, videoType, bunnyLibraryId } = req.body;
         const course = await Course_1.default.findById(id);
         if (!course) {
             return res.status(404).json({ error: 'Course not found' });
@@ -201,6 +206,8 @@ async function updateTopic(req, res, next) {
             topic.videoUrl = videoUrl;
         if (videoType !== undefined)
             topic.videoType = videoType;
+        if (bunnyLibraryId !== undefined)
+            topic.bunnyLibraryId = bunnyLibraryId;
         await course.save();
         return res.json(formatCourse(course.toObject()));
     }

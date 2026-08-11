@@ -16,6 +16,7 @@ export interface AuthenticatedRequest extends Request {
     id: string;
     title: string;
     videoId: string;
+    bunnyLibraryId?: string;
   };
 }
 
@@ -91,7 +92,8 @@ export async function authorizeVideoAccess(
     req.lesson = {
       id: lesson._id.toString(),
       title: lesson.title,
-      videoId: lesson.videoId
+      videoId: lesson.videoId,
+      bunnyLibraryId: lesson.bunnyLibraryId
     };
 
     next();
