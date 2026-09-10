@@ -71,6 +71,19 @@ router.delete('/batches/:id',           adminBatch.deleteBatch);
 router.post('/batches/:id/members',     adminBatch.addMember);
 router.delete('/batches/:id/members/:userId', adminBatch.removeMember);
 router.post('/batches/:id/courses',     adminBatch.alignCourses);
-router.post('/batches/:id/courses/:courseId/modules/reorder', adminBatch.reorderBatchModules);
+// ── Job Scraper & Job Portal ───────────────────────────────────────────────
+const adminJob = require('../controllers/adminJob.controller');
+router.get('/job-scraper/health',                   adminJob.checkHealth);
+router.post('/job-scraper/scrape',                  adminJob.scrapeJobs);
+router.get('/job-scraper/history',                  adminJob.getSearchHistory);
+router.get('/job-scraper/history/:searchId',        adminJob.getSearchJobs);
+router.get('/job-scraper/export-csv/:searchId',     adminJob.exportScrapedCsv);
+router.post('/job-scraper/export-csv',              adminJob.exportScrapedCsv);
+
+router.post('/jobs/publish',                        adminJob.publishJobs);
+router.get('/jobs/published',                       adminJob.getPublishedJobs);
+router.delete('/jobs/published/:id',                adminJob.deletePublishedJob);
+router.get('/jobs/export-csv',                      adminJob.exportPublishedCsv);
 
 module.exports = router;
+
