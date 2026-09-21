@@ -79,11 +79,14 @@ router.get('/job-scraper/history',                  adminJob.getSearchHistory);
 router.get('/job-scraper/history/:searchId',        adminJob.getSearchJobs);
 router.get('/job-scraper/export-csv/:searchId',     adminJob.exportScrapedCsv);
 router.post('/job-scraper/export-csv',              adminJob.exportScrapedCsv);
+router.get('/job-scraper/export-html/:searchId',    adminJob.exportScrapedHtml);
+router.post('/job-scraper/export-html',             adminJob.exportScrapedHtml);
 
 router.post('/jobs/publish',                        adminJob.publishJobs);
 router.get('/jobs/published',                       adminJob.getPublishedJobs);
 router.delete('/jobs/published/:id',                adminJob.deletePublishedJob);
 router.get('/jobs/export-csv',                      adminJob.exportPublishedCsv);
+router.get('/jobs/export-html',                     adminJob.exportPublishedHtml);
 
 module.exports = router;
 

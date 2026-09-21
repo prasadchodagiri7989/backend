@@ -36,8 +36,8 @@ class JobScraperService {
     is_remote = false,
   }) {
     const controller = new AbortController();
-    // Scraping across multiple platforms can take up to 2 minutes
-    const timeout = setTimeout(() => controller.abort(), 120000);
+    // Scraping across multiple platforms can take up to 5 minutes
+    const timeout = setTimeout(() => controller.abort(), 300000);
 
     try {
       const res = await fetch(`${JOBSCRAPPER_URL}/api/internal/scrape`, {
