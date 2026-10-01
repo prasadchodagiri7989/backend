@@ -34,6 +34,7 @@ class JobScraperService {
     hours_old = 72,
     country_indeed = 'India',
     is_remote = false,
+    include_title_in_description = true,
   }) {
     const controller = new AbortController();
     // Scraping across multiple platforms can take up to 5 minutes
@@ -54,6 +55,7 @@ class JobScraperService {
           hours_old: hours_old ? Number(hours_old) : null,
           country_indeed,
           is_remote: Boolean(is_remote),
+          include_title_in_description: Boolean(include_title_in_description),
         }),
         signal: controller.signal,
       });

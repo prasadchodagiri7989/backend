@@ -48,6 +48,7 @@ exports.scrapeJobs = async (req, res) => {
       hours_old = 72,
       country_indeed = 'India',
       is_remote = false,
+      include_title_in_description = true,
     } = req.body;
 
     if (!search_term) {
@@ -62,6 +63,7 @@ exports.scrapeJobs = async (req, res) => {
       hours_old,
       country_indeed,
       is_remote,
+      include_title_in_description,
     });
 
     const scrapedJobs = scrapeResult.jobs || [];
@@ -71,11 +73,21 @@ exports.scrapeJobs = async (req, res) => {
     const existingPublished = await Job.find({ job_url: { $in: jobUrls } }).select('job_url status');
     const publishedUrlMap = new Map(existingPublished.map((j) => [j.job_url, j.status]));
 
-    const jobsWithStatus = scrapedJobs.map((job) => ({
-      ...job,
-      is_published: publishedUrlMap.has(job.job_url),
-      published_status: publishedUrlMap.get(job.job_url) || null,
-    }));
+    const jobsWithStatus = scrapedJobs.map((job) => {
+      let desc = job.description || '';
+      if (include_title_in_description && job.title) {
+        const cleanTitle = String(job.title).trim();
+        if (!desc.toLowerCase().startsWith(cleanTitle.toLowerCase()) && !desc.toLowerCase().includes(`job title: ${cleanTitle.toLowerCase()}`)) {
+          desc = desc ? `Job Title: ${cleanTitle}\n\n${desc}` : `Job Title: ${cleanTitle}`;
+        }
+      }
+      return {
+        ...job,
+        description: desc,
+        is_published: publishedUrlMap.has(job.job_url),
+        published_status: publishedUrlMap.get(job.job_url) || null,
+      };
+    });
 
     // Cache search log in MongoDB
     try {
