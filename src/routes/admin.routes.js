@@ -49,11 +49,14 @@ router.post('/courses/:id/modules/:moduleId/topics/:topicId/attachments',       
 router.put('/courses/:id/modules/:moduleId/topics/:topicId/attachments/:attachmentId',    admin.renameAttachment);
 router.delete('/courses/:id/modules/:moduleId/topics/:topicId/attachments/:attachmentId', admin.deleteAttachment);
 
-// ── Activity ───────────────────────────────────────────────────────────────
+// ── Activity & Sync ───────────────────────────────────────────────────────
 router.get('/activity',   admin.getActivity);
+router.post('/sync-prod-to-uat', admin.syncProdToUat);
 
 // ── Suspicious ─────────────────────────────────────────────────────────────
 router.get('/suspicious', admin.getSuspiciousActivity);
+router.post('/suspicious/:id/reset-ips', admin.resetUserIps);
+router.post('/users/:id/reset-ips', admin.resetUserIps);
 
 // ── Announcements ──────────────────────────────────────────────────────────
 router.get('/announcements',              admin.getAnnouncements);

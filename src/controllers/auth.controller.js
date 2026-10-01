@@ -46,7 +46,7 @@ const getClientIp = (req) => {
 
 const signToken = (user) =>
   jwt.sign(
-    { sub: user._id.toString(), email: user.email, name: user.name, role: user.role, status: user.status || 'active' },
+    { sub: user._id.toString(), email: user.email, name: user.name, role: user.role, status: user.status || 'active', phone: user.phone || null },
     process.env.JWT_SECRET,
     { expiresIn: process.env.JWT_EXPIRES_IN || '4h' }
   );
@@ -55,6 +55,7 @@ const safeUser = (user) => ({
   id:     user._id.toString(),
   name:   user.name,
   email:  user.email,
+  phone:  user.phone || null,
   avatar: user.avatar || null,
   role:   user.role,
   status: user.status || 'active',
@@ -297,4 +298,49 @@ const approve = async (req, res, next) => {
   }
 };
 
-module.exports = { register, login, me, loginHistory, googleCallback, suspiciousCheck, updateDeviceInfo, captureFace, getPublicBatches, approve };
+// ─── POST /api/auth/phone ────────────────────────────────────────────────────
+const updatePhone = async (req, res, next) => {
+  try {
+    const { phone } = req.body;
+    if (!phone || typeof phone !== 'string' || !phone.trim()) {
+      return res.status(400).json({ error: 'Valid WhatsApp mobile number is required' });
+    }
+
+    const cleanPhone = phone.trim();
+    if (!/^\+?[\d\s\-()]{7,20}$/.test(cleanPhone)) {
+      return res.status(400).json({ error: 'Please enter a valid mobile number (e.g. +91 9876543210)' });
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      req.user.sub,
+      { phone: cleanPhone },
+      { new: true }
+    ).select('-password');
+
+    if (!updatedUser) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json({
+      success: true,
+      message: 'WhatsApp mobile number saved successfully',
+      user: safeUser(updatedUser),
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+module.exports = {
+  register,
+  login,
+  me,
+  loginHistory,
+  googleCallback,
+  suspiciousCheck,
+  updateDeviceInfo,
+  captureFace,
+  getPublicBatches,
+  approve,
+  updatePhone,
+};

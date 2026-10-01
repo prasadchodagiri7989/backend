@@ -9,6 +9,7 @@ const UserSchema = new mongoose.Schema(
     email:    { type: String, required: true, unique: true, lowercase: true, trim: true },
     password: { type: String, default: null }, // null for Google-only accounts
     googleId: { type: String, sparse: true, unique: true }, // omit when absent (sparse index ignores missing)
+    phone:    { type: String, trim: true, default: null },
     avatar:   { type: String },
     role:     { type: String, enum: ['student', 'admin'], default: 'student' },
     status:   { type: String, enum: ['active', 'blocked', 'pending'], default: 'active' },

@@ -1,7 +1,9 @@
 'use strict';
 
+const mongoose            = require('mongoose');
 const User                = require('../models/User');
 const Course              = require('../models/Course');
+const Batch               = require('../models/Batch');
 const LoginHistory        = require('../models/LoginHistory');
 const UserProgress        = require('../models/UserProgress');
 const ActivityLog         = require('../models/ActivityLog');
@@ -93,28 +95,52 @@ const getUsers = async (req, res, next) => {
     const users    = await User.find().select('-password').sort({ createdAt: -1 }).lean();
     const userIds  = users.map((u) => u._id);
 
-    const lastLogins = await LoginHistory.aggregate([
-      { $match: { userId: { $in: userIds } } },
-      { $sort: { createdAt: -1 } },
-      {
-        $group: {
-          _id:        '$userId',
-          lastLogin:  { $first: '$createdAt' },
-          lastIp:     { $first: '$ip' },
-          loginCount: { $sum: 1 },
+    const [lastLogins, allBatches] = await Promise.all([
+      LoginHistory.aggregate([
+        { $match: { userId: { $in: userIds } } },
+        { $sort: { createdAt: -1 } },
+        {
+          $group: {
+            _id:        '$userId',
+            lastLogin:  { $first: '$createdAt' },
+            lastIp:     { $first: '$ip' },
+            loginCount: { $sum: 1 },
+          },
         },
-      },
+      ]),
+      Batch.find({ members: { $in: userIds } })
+        .populate('courses', 'title')
+        .lean(),
     ]);
 
     const loginMap = Object.fromEntries(lastLogins.map((l) => [l._id.toString(), l]));
 
+    // Map user to their batches and courses
+    const userBatchMap = {};
+    for (const b of allBatches) {
+      for (const m of (b.members || [])) {
+        const mId = m.toString();
+        if (!userBatchMap[mId]) {
+          userBatchMap[mId] = { batches: [], coursesMap: new Map() };
+        }
+        userBatchMap[mId].batches.push({ id: b._id.toString(), name: b.name });
+        for (const c of (b.courses || [])) {
+          if (c && c._id) {
+            userBatchMap[mId].coursesMap.set(c._id.toString(), { id: c._id.toString(), title: c.title });
+          }
+        }
+      }
+    }
+
     res.json(
       users.map((u) => {
         const info = loginMap[u._id.toString()] || {};
+        const bInfo = userBatchMap[u._id.toString()] || { batches: [], coursesMap: new Map() };
         return {
           id:         u._id,
           name:       u.name,
           email:      u.email,
+          phone:      u.phone || null,
           role:       u.role,
           status:     u.status || 'active',
           avatar:     u.avatar || null,
@@ -123,6 +149,8 @@ const getUsers = async (req, res, next) => {
           lastLogin:  info.lastLogin  || null,
           lastIp:     info.lastIp     || null,
           loginCount: info.loginCount || 0,
+          batches:    bInfo.batches,
+          courses:    Array.from(bInfo.coursesMap.values()),
         };
       })
     );
@@ -133,7 +161,7 @@ const getUsers = async (req, res, next) => {
 
 const updateUser = async (req, res, next) => {
   try {
-    const allowed = ['name', 'email', 'role', 'status'];
+    const allowed = ['name', 'email', 'phone', 'role', 'status'];
     const updates = {};
     for (const k of allowed) {
       if (req.body[k] !== undefined) updates[k] = req.body[k];
@@ -640,18 +668,27 @@ const getSuspiciousActivity = async (req, res, next) => {
   try {
     const results = await LoginHistory.aggregate([
       { $match: { eventType: { $ne: 'blocked_attempt' } } },
+      { $sort: { createdAt: -1 } },
       {
         $group: {
-          _id:          '$userId',
-          distinctIPs:  { $addToSet: '$ip' },
+          _id:             '$userId',
+          distinctIPs:     { $addToSet: '$ip' },
           distinctDevices: { $addToSet: '$deviceId' },
-          totalLogins:  { $sum: 1 },
-          lastLogin:    { $max: '$createdAt' },
-          firstLogin:   { $min: '$createdAt' },
-          methods:      { $addToSet: '$method' },
-          lastIp:       { $last: '$ip' },
-          recentLogins: {
-            $push: { ip: '$ip', method: '$method', userAgent: '$userAgent', createdAt: '$createdAt', browser: '$browser', os: '$os' },
+          totalLogins:     { $sum: 1 },
+          lastLogin:       { $max: '$createdAt' },
+          firstLogin:      { $min: '$createdAt' },
+          methods:         { $addToSet: '$method' },
+          lastIp:          { $first: '$ip' },
+          allLogins: {
+            $push: {
+              ip:        '$ip',
+              method:    '$method',
+              userAgent: '$userAgent',
+              createdAt: '$createdAt',
+              browser:   '$browser',
+              os:        '$os',
+              faceCard:  '$faceCard',
+            },
           },
         },
       },
@@ -666,46 +703,57 @@ const getSuspiciousActivity = async (req, res, next) => {
         },
       },
       { $unwind: { path: '$user', preserveNullAndEmptyArrays: true } },
-      {
-        $project: {
-          userId:       '$_id',
-          _id:          0,
-          name:         { $ifNull: ['$user.name',   'Deleted User'] },
-          email:        { $ifNull: ['$user.email',  ''] },
-          role:         { $ifNull: ['$user.role',   'unknown'] },
-          status:       { $ifNull: ['$user.status', 'active'] },
-          distinctIPs:  1,
-          ipCount:      { $size: '$distinctIPs' },
-          deviceCount:  {
-            $size: {
-              $filter: {
-                input: '$distinctDevices',
-                as:    'd',
-                cond:  { $ne: ['$$d', null] },
-              },
-            },
-          },
-          lastActiveIP: '$lastIp',
-          totalLogins:  1,
-          lastLogin:    1,
-          firstLogin:   1,
-          methods:      1,
-          riskLevel: {
-            $switch: {
-              branches: [
-                { case: { $gte: [{ $size: '$distinctIPs' }, 5] }, then: 'critical' },
-                { case: { $gte: [{ $size: '$distinctIPs' }, 3] }, then: 'high' },
-              ],
-              default: 'medium',
-            },
-          },
-          recentLogins: { $slice: ['$recentLogins', -10] },
-        },
-      },
-      { $sort: { ipCount: -1, lastLogin: -1 } },
     ]);
 
-    res.json(results);
+    const formatted = results.map((r) => {
+      const allLogins = r.allLogins || [];
+
+      // Calculate login counts per IP address
+      const ipCounts = {};
+      for (const log of allLogins) {
+        if (log.ip) {
+          ipCounts[log.ip] = (ipCounts[log.ip] || 0) + 1;
+        }
+      }
+
+      const ipDetails = (r.distinctIPs || []).map((ip) => ({
+        ip,
+        count: ipCounts[ip] || 0,
+      })).sort((a, b) => b.count - a.count);
+
+      const recentLogins = allLogins.slice(0, 15);
+
+      const distinctIPsCount = (r.distinctIPs || []).length;
+      let riskLevel = 'medium';
+      if (distinctIPsCount >= 5) riskLevel = 'critical';
+      else if (distinctIPsCount >= 3) riskLevel = 'high';
+
+      const validDevices = (r.distinctDevices || []).filter(Boolean);
+
+      return {
+        userId:       r._id,
+        name:         r.user ? r.user.name : 'Deleted User',
+        email:        r.user ? r.user.email : '',
+        phone:        r.user ? (r.user.phone || null) : null,
+        role:         r.user ? (r.user.role || 'unknown') : 'unknown',
+        status:       r.user ? (r.user.status || 'active') : 'active',
+        distinctIPs:  r.distinctIPs,
+        ipDetails,
+        ipCount:      distinctIPsCount,
+        deviceCount:  validDevices.length,
+        lastActiveIP: r.lastIp,
+        totalLogins:  r.totalLogins,
+        lastLogin:    r.lastLogin,
+        firstLogin:   r.firstLogin,
+        methods:      r.methods,
+        riskLevel,
+        recentLogins,
+      };
+    });
+
+    formatted.sort((a, b) => b.ipCount - a.ipCount || new Date(b.lastLogin).getTime() - new Date(a.lastLogin).getTime());
+
+    res.json(formatted);
   } catch (err) {
     next(err);
   }
@@ -787,7 +835,7 @@ const deleteAnnouncement = async (req, res, next) => {
 
 const createUser = async (req, res, next) => {
   try {
-    const { name, email, role, status, password } = req.body;
+    const { name, email, role, status, password, phone } = req.body;
     if (!name || !email) {
       return res.status(400).json({ error: 'Name and email are required' });
     }
@@ -800,6 +848,7 @@ const createUser = async (req, res, next) => {
       email: email.toLowerCase().trim(),
       role: role || 'student',
       status: status || 'active',
+      phone: phone ? phone.trim() : null,
     };
     if (password) {
       userData.password = await User.hashPassword(password);
@@ -847,6 +896,123 @@ const uploadThumbnail = async (req, res, next) => {
   }
 };
 
+// ─── Reset User IP Addresses ──────────────────────────────────────────────────
+const resetUserIps = async (req, res, next) => {
+  try {
+    const userId = req.params.id;
+    const { ip } = req.body || {};
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Find latest login record to find current active IP
+    const latestLogin = await LoginHistory.findOne({
+      userId,
+      eventType: { $ne: 'blocked_attempt' },
+    }).sort({ createdAt: -1 });
+
+    if (!latestLogin) {
+      return res.status(400).json({ error: 'No login records found for this user.' });
+    }
+
+    const targetIp = latestLogin.ip;
+
+    if (ip) {
+      // Reset this specific IP by changing historical records of this IP to the current IP
+      await LoginHistory.updateMany(
+        { userId, ip },
+        { $set: { ip: targetIp, isNewDevice: false } }
+      );
+    } else {
+      // Reset all historical IP records to the current active IP
+      await LoginHistory.updateMany(
+        { userId },
+        { $set: { ip: targetIp, isNewDevice: false } }
+      );
+    }
+
+    // Log admin audit action
+    await ActivityLog.create({
+      eventType: 'ip_reset',
+      targetUserId: userId,
+      performedBy: req.user ? req.user.sub : null,
+      ip: targetIp,
+      details: ip
+        ? `Reset specific IP ${ip} to latest active IP ${targetIp}`
+        : `Reset all IP addresses to latest active IP ${targetIp}`,
+    });
+
+    res.json({
+      success: true,
+      message: ip
+        ? `IP ${ip} reset to ${targetIp} successfully.`
+        : `All IP addresses reset to ${targetIp} successfully.`,
+      lastActiveIP: targetIp,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ─── Sync Data From Prod to UAT ───────────────────────────────────────────────
+const syncProdToUat = async (req, res, next) => {
+  const PROD_MONGO_URI = process.env.PROD_MONGO_URI || 'mongodb+srv://chodagiriprasad5:Prasad%40123@cluster0.w4dod.mongodb.net/lms-backend?retryWrites=true&w=majority&appName=Cluster0';
+  const UAT_MONGO_URI  = process.env.UAT_MONGO_URI  || 'mongodb+srv://chodagiriprasad5:Prasad%40123@cluster0.w4dod.mongodb.net/lms-backend-uat?retryWrites=true&w=majority&appName=Cluster0';
+
+  const { MongoClient } = mongoose.mongo;
+  let sourceClient = null;
+  let targetClient = null;
+
+  try {
+    sourceClient = new MongoClient(PROD_MONGO_URI);
+    targetClient = new MongoClient(UAT_MONGO_URI);
+
+    await Promise.all([sourceClient.connect(), targetClient.connect()]);
+
+    const sourceDb = sourceClient.db();
+    const targetDb = targetClient.db();
+
+    const collections = await sourceDb.listCollections().toArray();
+    const stats = [];
+    let totalDocuments = 0;
+
+    for (const colInfo of collections) {
+      const colName = colInfo.name;
+      if (colName.startsWith('system.')) continue;
+
+      const sourceColl = sourceDb.collection(colName);
+      const targetColl = targetDb.collection(colName);
+
+      const docs = await sourceColl.find({}).toArray();
+
+      // Clear existing records in UAT target collection
+      await targetColl.deleteMany({});
+
+      if (docs.length > 0) {
+        await targetColl.insertMany(docs);
+      }
+
+      stats.push({ collection: colName, count: docs.length });
+      totalDocuments += docs.length;
+    }
+
+    res.json({
+      success: true,
+      message: `Successfully synchronized ${totalDocuments} documents across ${stats.length} collections from Production to UAT.`,
+      stats,
+      totalDocuments,
+      totalCollections: stats.length,
+    });
+  } catch (err) {
+    next(err);
+  } finally {
+    if (sourceClient) await sourceClient.close().catch(() => {});
+    if (targetClient) await targetClient.close().catch(() => {});
+  }
+};
+
 module.exports = {
   getStats,
   getUsers, createUser, updateUser, deleteUser, bulkCreateUsers, blockUser, unblockUser,
@@ -856,6 +1022,8 @@ module.exports = {
   updateTopicNotes,
   getActivity,
   getSuspiciousActivity,
+  resetUserIps,
+  syncProdToUat,
   getAnnouncements, createAnnouncement, updateAnnouncement, deleteAnnouncement,
   addAttachment, renameAttachment, deleteAttachment,
 };

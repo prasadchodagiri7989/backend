@@ -8,7 +8,7 @@ const mongoose = require('mongoose');
  */
 const ActivityLogSchema = new mongoose.Schema(
   {
-    eventType:    { type: String, enum: ['block', 'unblock', 'blocked_login_attempt'], required: true, index: true },
+    eventType:    { type: String, enum: ['block', 'unblock', 'blocked_login_attempt', 'ip_reset'], required: true, index: true },
     targetUserId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
     performedBy:  { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
     ip:           { type: String, default: null },

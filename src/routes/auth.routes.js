@@ -59,5 +59,7 @@ router.post('/device', authenticate, authController.updateDeviceInfo);
 router.post('/capture-face', authenticate, authController.captureFace);
 router.get('/batches/public', authenticate, authController.getPublicBatches);
 router.post('/approve', authenticate, authController.approve);
+router.post('/phone', authenticate, authController.updatePhone);
+router.put('/phone', authenticate, authController.updatePhone);
 
 module.exports = router;
