@@ -28,6 +28,8 @@ class JobScraperService {
    */
   async scrapeJobs({
     search_term,
+    title = '',
+    description = '',
     location = '',
     sites = ['indeed', 'linkedin', 'naukri'],
     results_wanted = 15,
@@ -49,6 +51,8 @@ class JobScraperService {
         },
         body: JSON.stringify({
           search_term,
+          title,
+          description,
           location,
           sites,
           results_wanted: Number(results_wanted) || 15,

@@ -2,6 +2,7 @@
 
 const Job = require('../models/Job');
 const JobSearch = require('../models/JobSearch');
+const PublishedExternalJob = require('../models/PublishedExternalJob');
 const scraperService = require('../services/jobScraper.service');
 
 /**
@@ -41,7 +42,8 @@ exports.checkHealth = async (_req, res) => {
 exports.scrapeJobs = async (req, res) => {
   try {
     const {
-      search_term,
+      title = '',
+      description = '',
       location = '',
       sites = ['indeed', 'linkedin', 'naukri'],
       results_wanted = 15,
@@ -51,12 +53,18 @@ exports.scrapeJobs = async (req, res) => {
       include_title_in_description = true,
     } = req.body;
 
+    const cleanTitle = String(title || '').trim();
+    const cleanDesc = String(description || '').trim();
+    const search_term = (req.body.search_term || [cleanTitle, cleanDesc].filter(Boolean).join(' ')).trim();
+
     if (!search_term) {
-      return res.status(400).json({ error: 'Search term is required' });
+      return res.status(400).json({ error: 'Please enter a Job Title, Description/Skills, or search term to search.' });
     }
 
     const scrapeResult = await scraperService.scrapeJobs({
       search_term,
+      title: cleanTitle,
+      description: cleanDesc,
       location,
       sites,
       results_wanted,
@@ -577,3 +585,211 @@ exports.exportScrapedHtml = async (req, res) => {
     return res.status(500).json({ error: err.message });
   }
 };
+
+/**
+ * Publish a batch/collection of jobs as a live external website
+ */
+exports.publishExternalJobs = async (req, res) => {
+  try {
+    const { title, description = '', jobs } = req.body;
+    if (!Array.isArray(jobs) || !jobs.length) {
+      return res.status(400).json({ error: 'No jobs provided to publish website' });
+    }
+
+    const cleanTitle = String(title || 'Curated Career Opportunities').trim();
+
+    // Map and sanitize jobs array
+    const mappedJobs = jobs.map((item) => {
+      const minSal = item.salary?.min_amount ?? (item.min_amount != null ? Number(item.min_amount) : null);
+      const maxSal = item.salary?.max_amount ?? (item.max_amount != null ? Number(item.max_amount) : null);
+      const curr = item.salary?.currency || item.currency || '';
+      const interval = item.salary?.interval || item.interval || '';
+
+      return {
+        title: item.title || 'Job Opening',
+        company: item.company || 'Engineering Firm',
+        location: item.location || '',
+        site: item.site || 'other',
+        job_type: item.job_type || 'fulltime',
+        is_remote: Boolean(item.is_remote),
+        salary: {
+          min_amount: minSal,
+          max_amount: maxSal,
+          currency: curr,
+          interval: interval,
+        },
+        date_posted: item.date_posted || '',
+        job_url: item.job_url || item.job_url_direct || '#',
+        job_url_direct: item.job_url_direct || item.job_url || '',
+        description: item.description || '',
+        skills: Array.isArray(item.skills) ? item.skills : [],
+        rawJson: item.rawJson || item.raw_json || item,
+      };
+    });
+
+    const doc = await PublishedExternalJob.create({
+      title: cleanTitle,
+      description: String(description || '').trim(),
+      jobs: mappedJobs,
+      jobsCount: mappedJobs.length,
+      publishedBy: req.user?._id || null,
+      status: 'active',
+      views: 0,
+    });
+
+    return res.status(201).json({
+      message: 'Website published successfully',
+      id: doc._id.toString(),
+      link: `/external-jobs/${doc._id}`,
+      jobsCount: doc.jobsCount,
+      published: doc,
+    });
+  } catch (err) {
+    console.error('Publish external jobs error:', err);
+    return res.status(500).json({ error: err.message || 'Failed to publish website' });
+  }
+};
+
+/**
+ * List all published external job links/websites
+ */
+exports.getPublishedExternalJobs = async (req, res) => {
+  try {
+    const { page = 1, limit = 25, search = '' } = req.query;
+    const query = {};
+
+    if (search) {
+      query.$or = [
+        { title: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } },
+      ];
+    }
+
+    const skip = (Number(page) - 1) * Number(limit);
+    const [docs, total] = await Promise.all([
+      PublishedExternalJob.find(query)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(Number(limit))
+        .populate('publishedBy', 'name email'),
+      PublishedExternalJob.countDocuments(query),
+    ]);
+
+    const items = docs.map((d) => ({
+      id: d._id.toString(),
+      title: d.title,
+      description: d.description,
+      jobsCount: d.jobsCount,
+      status: d.status,
+      views: d.views,
+      link: `/external-jobs/${d._id}`,
+      publishedBy: d.publishedBy,
+      createdAt: d.createdAt,
+      updatedAt: d.updatedAt,
+      sampleJobs: (d.jobs || []).slice(0, 3).map((j) => ({
+        title: j.title,
+        company: j.company,
+        location: j.location,
+      })),
+    }));
+
+    return res.json({
+      external_jobs: items,
+      total,
+      page: Number(page),
+      totalPages: Math.ceil(total / Number(limit)),
+    });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+};
+
+/**
+ * Get a single published external job site details
+ */
+exports.getSinglePublishedExternalJob = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const doc = await PublishedExternalJob.findById(id).populate('publishedBy', 'name email');
+    if (!doc) {
+      return res.status(404).json({ error: 'Published external jobs website not found' });
+    }
+    return res.json({ external_job: doc });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+};
+
+/**
+ * Delete a published external job website
+ */
+exports.deletePublishedExternalJob = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const deleted = await PublishedExternalJob.findByIdAndDelete(id);
+    if (!deleted) {
+      return res.status(404).json({ error: 'Published website not found' });
+    }
+    return res.json({ message: 'Published external website removed successfully' });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+};
+
+/**
+ * Public JSON API for frontend React app (increments view count)
+ */
+exports.getPublicExternalJobJson = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const doc = await PublishedExternalJob.findById(id);
+    if (!doc || doc.status === 'archived') {
+      return res.status(404).json({ error: 'Published job opportunities not found or expired' });
+    }
+
+    // Increment view count asynchronously
+    doc.views = (doc.views || 0) + 1;
+    await doc.save();
+
+    return res.json({
+      id: doc._id.toString(),
+      title: doc.title,
+      description: doc.description,
+      jobsCount: doc.jobsCount,
+      jobs: doc.jobs,
+      createdAt: doc.createdAt,
+      views: doc.views,
+    });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+};
+
+/**
+ * Server-rendered live HTML website for /external-jobs/:id
+ */
+exports.renderExternalJobWebsite = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const doc = await PublishedExternalJob.findById(id);
+    if (!doc || doc.status === 'archived') {
+      return res.status(404).send(`<!DOCTYPE html>
+<html>
+<head><title>Jobs Page Not Found</title><style>body{font-family:sans-serif;text-align:center;padding:50px;background:#f8fafc;color:#334155;}</style></head>
+<body><h1>404 - Job Portal Page Not Found</h1><p>This published external jobs link may have expired or been removed.</p></body>
+</html>`);
+    }
+
+    // Increment view count
+    doc.views = (doc.views || 0) + 1;
+    await doc.save();
+
+    const html = toHTML(doc.jobs, doc.title || 'Curated Career Opportunities');
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    return res.status(200).send(html);
+  } catch (err) {
+    return res.status(500).send(`<!DOCTYPE html><html><body><h1>Error loading jobs website</h1><p>${escapeHtml(err.message)}</p></body></html>`);
+  }
+};
+
+exports.toHTML = toHTML;

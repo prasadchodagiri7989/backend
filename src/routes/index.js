@@ -23,4 +23,8 @@ router.use('/lessons',       videoRoutes);
 router.use('/discussions',   discussionRoutes);
 router.use('/jobs',          jobRoutes);
 
+// Public route for published external job websites (JSON for React app)
+const adminJob = require('../controllers/adminJob.controller');
+router.get('/external-jobs/:id', adminJob.getPublicExternalJobJson);
+
 module.exports = router;

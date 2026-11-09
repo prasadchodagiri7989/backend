@@ -91,5 +91,11 @@ router.delete('/jobs/published/:id',                adminJob.deletePublishedJob)
 router.get('/jobs/export-csv',                      adminJob.exportPublishedCsv);
 router.get('/jobs/export-html',                     adminJob.exportPublishedHtml);
 
+// ── Published External Jobs (Live Website Links) ──────────────────────
+router.post('/jobs/publish-external',               adminJob.publishExternalJobs);
+router.get('/jobs/published-external',              adminJob.getPublishedExternalJobs);
+router.get('/jobs/published-external/:id',          adminJob.getSinglePublishedExternalJob);
+router.delete('/jobs/published-external/:id',       adminJob.deletePublishedExternalJob);
+
 module.exports = router;
 

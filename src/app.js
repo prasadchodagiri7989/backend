@@ -122,6 +122,10 @@ app.use(
 // ─── Routes ──────────────────────────────────────────────────────────────────
 app.use('/api', routes);
 
+// ─── Published External Jobs Live Website (Direct Render) ────────────────────
+const adminJobController = require('./controllers/adminJob.controller');
+app.get('/external-jobs/:id', adminJobController.renderExternalJobWebsite);
+
 // ─── 404 ─────────────────────────────────────────────────────────────────────
 app.use((_req, res) => res.status(404).json({ error: 'Not Found' }));
 
